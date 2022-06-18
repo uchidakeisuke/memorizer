@@ -1,0 +1,1 @@
+export { InputTextOnChangeEvent } from "./primereact";

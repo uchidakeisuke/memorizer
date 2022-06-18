@@ -1,0 +1,13 @@
+.p-toast {
+    top: 100px;
+    max-width: 340px;
+}
+
+.p-toast .p-toast-message.p-toast-message-error {
+    background: #ffe7e6;
+    border-left: solid 6px;
+}
+
+.p-toast-message .p-toast-message-content {
+    border: none;
+}

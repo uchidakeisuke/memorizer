@@ -1,0 +1,7 @@
+{
+    "appId": "memorizer",
+    "files": ["./dist/*", "./dist/**/*"],
+    "mac": {
+        "icon": "./eng.icns"
+    }
+}
