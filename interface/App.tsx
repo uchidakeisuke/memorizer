@@ -24,7 +24,7 @@ const App = () => {
     const toast = useRef(null);
 
     const openAddTerm = () => {
-        navigate("/add");
+        navigate("/add", { state: { focus: true } });
     };
 
     useEffect(() => {

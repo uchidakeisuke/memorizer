@@ -39,6 +39,7 @@ export const AddOrEdit = (props: AddOrEditProps) => {
     const navigate = useNavigate();
     const location = useLocation();
     const submitButton = useRef(null);
+    const termInput = useRef(null);
 
     const [isTextError, setIsTextError] = useState(false);
 
@@ -152,6 +153,9 @@ export const AddOrEdit = (props: AddOrEditProps) => {
     }, []);
 
     useEffect(() => {
+        if ((location.state as { focus: boolean })?.focus) {
+            (termInput?.current as { focus: () => void } | null)?.focus();
+        }
         const termId = (location.state as { id: number })?.id;
         if (termId) {
             ipcRendererSend<GetTermRequestData>("getTerm", {
@@ -391,6 +395,7 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                             isTextError ? " p-invalid" : ""
                         }`}
                         autoFocus={true}
+                        ref={termInput}
                     />
                 </div>
                 <div className="field mb-4">
