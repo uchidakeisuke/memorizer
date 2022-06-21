@@ -294,7 +294,9 @@ export const getAllTerms = async (): Promise<Term[]> => {
     return new Promise(async (resolve, reject) => {
         try {
             const termRepository = dataSource.getRepository(Term);
-            const allTerms = await termRepository.find();
+            const allTerms = await termRepository.find({
+                order: { id: "DESC" },
+            });
             resolve(allTerms);
         } catch (error) {
             console.error(error);

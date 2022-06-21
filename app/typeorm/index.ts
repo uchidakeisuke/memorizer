@@ -4,9 +4,11 @@ import { DataSource } from "typeorm";
 
 import { Memory, Tag, Term, Video } from "./entities";
 
+const MODE = process.env.MODE;
 const dbName = "memorizer.db";
-export const devDbPath = `./${dbName}`;
-const dbPath = join(app.getPath("userData"), dbName);
+const devDbPath = `./${dbName}`;
+const dbPath =
+    MODE === "development" ? devDbPath : join(app.getPath("userData"), dbName);
 
 export const dataSource = new DataSource({
     type: "sqlite",

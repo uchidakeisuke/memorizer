@@ -3,7 +3,7 @@ import defaultMenu from "electron-default-menu";
 import { join } from "path";
 import "reflect-metadata";
 
-import { getValue } from "../shared/local_store";
+import { getValue, setValue } from "../shared/local_store";
 import { ipcMainInit } from "./ipc/ipc_main";
 import { dataSource } from "./typeorm";
 
@@ -29,7 +29,9 @@ const createWindow = () => {
     mainWindow.loadFile(join(__dirname, "./index.html"));
     mainWindow.setAlwaysOnTop(alwaysOnTop);
     mainWindow.setPosition(x, y);
-    // mainWindow.webContents.openDevTools();
+
+    const MODE = process.env.MODE;
+    if (MODE === "development") mainWindow.webContents.openDevTools();
 };
 
 const menu = defaultMenu(app, shell);
@@ -64,5 +66,11 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") app.quit();
+    app.quit();
+});
+
+app.on("before-quit", () => {
+    const position = mainWindow.getPosition();
+    setValue("x", position[0]);
+    setValue("y", position[1]);
 });

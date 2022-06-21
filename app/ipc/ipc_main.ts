@@ -13,7 +13,6 @@ import {
     updateSuspend,
     updateTerm,
 } from "../services/term";
-import { devDbPath } from "../typeorm";
 import { Term } from "../typeorm/entities";
 import {
     AddTermRequest,
@@ -230,15 +229,6 @@ const ipcMainToggleAlwaysOnTop = (mainWindow: BrowserWindow) => {
     });
 };
 
-const ipcMainDownloadDb = (mainWindow: BrowserWindow) => {
-    ipcMain.on("downloadDb", () => {
-        download(mainWindow, devDbPath, {
-            filename: "memorizer.db",
-            saveAs: true,
-        });
-    });
-};
-
 export const ipcMainInit = (mainWindow: BrowserWindow) => {
     ipcMainAddTerm();
     ipcMainGetTerm();
@@ -251,5 +241,4 @@ export const ipcMainInit = (mainWindow: BrowserWindow) => {
     ipcMainShowThisApp(mainWindow);
     ipcMainUpdateStatusAndSuspend();
     ipcMainToggleAlwaysOnTop(mainWindow);
-    ipcMainDownloadDb(mainWindow);
 };

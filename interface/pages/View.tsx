@@ -22,6 +22,8 @@ import urbandictionaryImg from "../dictionary_icons/urbandictionary.png";
 import { successSummary } from "../messages";
 import "../styles/galleria.css";
 
+const synth = window.speechSynthesis;
+
 type ViewProps = {
     showMessage: ShowMessage;
 };
@@ -42,6 +44,23 @@ export const View = (props: ViewProps) => {
         true,
     ]);
 
+    const [pronouncing, setPronouncing] = useState(false);
+
+    const copy = (term: string) => {
+        navigator.clipboard.writeText(term);
+    };
+
+    const pronounce = (term: string) => {
+        if (pronouncing) {
+            speechSynthesis.cancel();
+        } else {
+            const message = new SpeechSynthesisUtterance(term);
+            message.lang = "en-US";
+            synth.speak(message);
+        }
+        setPronouncing(!pronouncing);
+    };
+
     const didGetTerm = (event: IpcRendererEvent, args: GetTermResponse) => {
         const term = args.data;
         setTerm(term);
@@ -56,6 +75,7 @@ export const View = (props: ViewProps) => {
         }
         return () => {
             ipcRenderer.off("didGetTerm", didGetTerm);
+            speechSynthesis.cancel();
         };
     }, []);
 
@@ -92,7 +112,7 @@ export const View = (props: ViewProps) => {
         <div className="mb-20">
             <Card>
                 <div className="flex mb-4 justify-between">
-                    <div className="flex">
+                    <div className="flex items-center">
                         <div className="mr-2">
                             <DictionaryIconLink
                                 linkUrl={`mkdictionaries:///?text=${term?.term}`}
@@ -113,6 +133,18 @@ export const View = (props: ViewProps) => {
                                 openNewWindow={true}
                             />
                         </div>
+                        <Button
+                            className="p-button-text ml-4"
+                            icon="pi pi-copy"
+                            onClick={() => copy(term?.term || "")}
+                        />
+                        <Button
+                            className="p-button-text ml-2"
+                            icon={`pi ${
+                                pronouncing ? "pi-volume-off" : "pi-volume-up"
+                            }`}
+                            onClick={() => pronounce(term?.term || "")}
+                        />
                     </div>
                     <div className="flex justify-end">
                         <Button
@@ -134,7 +166,9 @@ export const View = (props: ViewProps) => {
                         collapsed={collapsedStates[0]}
                         onToggle={(e) => onToggle(0, e.value)}
                     >
-                        <div>{term?.term}</div>
+                        <div className="flex flex-col">
+                            <p className="mb-2">{term?.term}</p>
+                        </div>
                     </Fieldset>
                 </div>
                 <div className="field mb-4">
@@ -145,7 +179,7 @@ export const View = (props: ViewProps) => {
                         onToggle={(e) => onToggle(1, e.value)}
                     >
                         <div
-                            className="ql-editor"
+                            className="ql-editor break-all"
                             dangerouslySetInnerHTML={{
                                 __html: term?.note || "",
                             }}

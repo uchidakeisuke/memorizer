@@ -1,3 +1,4 @@
+import { Button } from "primereact/button";
 import { Galleria } from "primereact/galleria";
 import React, { useState } from "react";
 
@@ -17,22 +18,44 @@ type YoutubeGalleryProps = {
 
 export const YoutubeGallery = (props: YoutubeGalleryProps) => {
     const [activeIndex, setActiveIndex] = useState(0);
+    const [key, setKey] = useState(0);
 
     const itemTemplate = (video: Video) => {
-        const videoId = extractYoutubeVideoIdFromUrl(video.url);
-        const start = convertStringTimeToSeconds(video.start);
-        const end = convertStringTimeToSeconds(video.end);
-        return (
-            <iframe
-                height="200"
-                src={`https://www.youtube.com/embed/${videoId}?start=${start}&end=${end}&autoplay=${
-                    props.autoplay ? "1" : "0"
-                }&loop=1`}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-            ></iframe>
-        );
+        if (video && video.url && video.start && video.end) {
+            const videoId = extractYoutubeVideoIdFromUrl(video.url);
+            const start = convertStringTimeToSeconds(video.start);
+            const end = convertStringTimeToSeconds(video.end);
+            return (
+                <div>
+                    <iframe
+                        height="200"
+                        src={`https://www.youtube.com/embed/${videoId}?start=${start}&end=${end}&autoplay=${
+                            props.autoplay ? "1" : "0"
+                        }&loop=1`}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        key={key}
+                    ></iframe>
+                    <Button
+                        className="p-button-text absolute video-replay"
+                        icon="pi pi-replay"
+                        onClick={() => setKey(key + 1)}
+                    />
+                </div>
+            );
+        } else {
+            return (
+                <div>
+                    <div className="empty-video"></div>
+                    <Button
+                        className="p-button-text absolute video-replay"
+                        icon="pi pi-replay"
+                        onClick={() => setKey(key + 1)}
+                    />
+                </div>
+            );
+        }
     };
 
     const thumbnailTemplate = (video: Video) => {

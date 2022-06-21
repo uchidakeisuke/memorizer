@@ -6,6 +6,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputSwitch } from "primereact/inputswitch";
 import { MultiSelect } from "primereact/multiselect";
 import { ScrollPanel } from "primereact/scrollpanel";
+import { Tag } from "primereact/tag";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -20,7 +21,7 @@ import {
     GetTargetTermsResponse,
     UpdateStatusAndSuspendResponse,
 } from "../../app/ipc/response";
-import { Memory, Tag, Term } from "../../app/typeorm/entities";
+import { Memory, Tag as TagEntity, Term } from "../../app/typeorm/entities";
 import { getValue, setValue } from "../../shared/local_store";
 import { ShowMessage } from "../App";
 import { Footer, YoutubeGallery } from "../components";
@@ -52,6 +53,10 @@ type PlayProps = {
 };
 
 export const Play = (props: PlayProps) => {
+    const initialDontPronounceWhenVideosPlay = getValue(
+        "dontPronounceWhenVideosPlay",
+        true
+    );
     const initialWaitVideosEnd = getValue("waitVideosEnd", true);
     const initialUseMemorizingTime = getValue("useMemorizingTime", true);
     const initialSelectedTags = getValue("selectedTags", []);
@@ -60,14 +65,16 @@ export const Play = (props: PlayProps) => {
 
     const [isPlaying, setIsPlaying] = useState(false);
 
-    const [tags, setTags] = useState<Tag["tag"][]>([]);
+    const [tags, setTags] = useState<TagEntity["tag"][]>([]);
 
+    const [dontPronounceWhenVideosPlay, setDontPronounceWhenVideosPlay] =
+        useState(initialDontPronounceWhenVideosPlay);
     const [waitVideosEnd, setWaitVideosEnd] = useState(initialWaitVideosEnd);
     const [useMemorizingTime, setUseMemorizingTime] = useState(
         initialUseMemorizingTime
     );
     const [selectedTags, setSelectedTags] =
-        useState<Tag["tag"][]>(initialSelectedTags);
+        useState<TagEntity["tag"][]>(initialSelectedTags);
     const [selectedStatus, setSelectedStatus] = useState<Memory["status"][]>(
         initialSelectedStatus
     );
@@ -80,6 +87,23 @@ export const Play = (props: PlayProps) => {
     const [activeIndex, setActiveIndex] = useState(0);
 
     const [increaseActiveIndex, setIncreaseActiveIndex] = useState(false);
+
+    const [pronouncing, setPronouncing] = useState(false);
+
+    const copy = (term: string) => {
+        navigator.clipboard.writeText(term);
+    };
+
+    const tempPronounce = (term: string) => {
+        if (pronouncing) {
+            speechSynthesis.cancel();
+        } else {
+            const message = new SpeechSynthesisUtterance(term);
+            message.lang = "en-US";
+            synth.speak(message);
+        }
+        setPronouncing(!pronouncing);
+    };
 
     const didGetTargetTerms = (
         event: IpcRendererEvent,
@@ -195,6 +219,13 @@ export const Play = (props: PlayProps) => {
         nextSeconds = 0;
         setPauseState(false);
         setIsPlaying(false);
+        setActiveIndex(0);
+    };
+
+    const pronounce = (term: string) => {
+        const message = new SpeechSynthesisUtterance(term);
+        message.lang = "en-US";
+        synth.speak(message);
     };
 
     const play = (terms: Term[]) => {
@@ -202,27 +233,34 @@ export const Play = (props: PlayProps) => {
         setTerm(nextTerm);
 
         nextSeconds = intervalSec;
+        waitingSecQueue = [];
         if (waitVideosEnd && nextTerm?.videos && nextTerm.videos.length) {
             nextSeconds = 0;
             let prevVideoSeconds = 0;
             for (const video of nextTerm.videos) {
                 const start = convertStringTimeToSeconds(video.start);
                 const end = convertStringTimeToSeconds(video.end);
-                const videoSeconds = end - start;
+                const videoSeconds = end - start + 1;
                 const accVideoSeconds = prevVideoSeconds + videoSeconds;
                 nextSeconds += videoSeconds;
                 waitingSecQueue.push(accVideoSeconds);
                 prevVideoSeconds = accVideoSeconds;
             }
         }
+        nextSeconds =
+            nextSeconds > intervalSec
+                ? nextSeconds + waitingSecQueue.length + 1
+                : intervalSec;
 
         if (nextTerm?.term) {
             ipcRendererSend<OpenDictionaryRequestData>("openDictionary", {
                 term: nextTerm.term,
             });
-            const message = new SpeechSynthesisUtterance(nextTerm.term);
-            message.lang = "en-US";
-            synth.speak(message);
+            const pronounceThis =
+                dontPronounceWhenVideosPlay && nextTerm.videos.length
+                    ? ""
+                    : nextTerm.term;
+            pronounce(pronounceThis);
             ipcRenderer.send("showThisApp");
         }
         termIndex += 1;
@@ -233,30 +271,47 @@ export const Play = (props: PlayProps) => {
         intervalId = setInterval(() => {
             if (!pause) {
                 if (!skip) {
-                    if (terms.length <= termIndex) {
+                    innerIntervalCount = 0;
+                    if (termIndex >= terms.length) {
                         resetPlayer();
                         return;
                     }
+                    videoWaitingSecondsIndex = 0;
+                    setActiveIndex(0);
                     play(terms);
                 }
+
                 if (
+                    waitingSecQueue.length &&
                     waitingSecQueue[videoWaitingSecondsIndex] + 1 ===
-                    innerIntervalCount
+                        innerIntervalCount
                 ) {
                     setIncreaseActiveIndex(true);
                     videoWaitingSecondsIndex += 1;
                 } else {
                     setIncreaseActiveIndex(false);
                 }
+
                 innerIntervalCount += 1;
                 if (nextSeconds === innerIntervalCount) {
                     skip = false;
-                    innerIntervalCount = 0;
                 } else {
                     skip = true;
                 }
             }
         }, 1000);
+    };
+
+    const next = () => {
+        if (termIndex >= targetTerms.length) return;
+        termIndex += 1;
+        skip = false;
+    };
+
+    const prev = () => {
+        if (!termIndex) return;
+        termIndex -= 1;
+        skip = false;
     };
 
     const memorized = () => {
@@ -295,37 +350,53 @@ export const Play = (props: PlayProps) => {
         }
     };
 
+    const onClickPause = () => {
+        if (pause) {
+            pause = false;
+        } else {
+            pause = true;
+        }
+
+        if (pauseState) {
+            setPauseState(false);
+        } else {
+            setPauseState(true);
+        }
+    };
+
     return (
         <div>
             {isPlaying ? (
                 <div>
-                    <div className="mb-4 flex justify-center">
+                    <div className="mb-4 flex justify-between">
                         <Button
-                            icon={`pi ${pauseState ? "pi-play" : "pi-pause"}`}
-                            className="p-button-rounded mr-2"
-                            onClick={() => {
-                                if (pause) {
-                                    pause = false;
-                                } else {
-                                    pause = true;
-                                }
-
-                                if (pauseState) {
-                                    setPauseState(false);
-                                } else {
-                                    setPauseState(true);
-                                }
-                            }}
-                            ref={pauseResumeButton}
-                        />
-                        <Button
-                            icon="pi pi-stop"
+                            icon="pi pi-angle-left"
                             className="p-button-rounded"
-                            onClick={() => resetPlayer()}
+                            onClick={prev}
+                        />
+                        <div>
+                            <Button
+                                icon={`pi ${
+                                    pauseState ? "pi-play" : "pi-pause"
+                                }`}
+                                className="p-button-rounded mr-2"
+                                onClick={onClickPause}
+                                ref={pauseResumeButton}
+                            />
+                            <Button
+                                icon="pi pi-stop"
+                                className="p-button-rounded"
+                                onClick={resetPlayer}
+                            />
+                        </div>
+                        <Button
+                            icon="pi pi-angle-right"
+                            className="p-button-rounded"
+                            onClick={next}
                         />
                     </div>
                     <Card>
-                        <div className="w-full mb-4 flex justify-center">
+                        <div className="w-full mb-4 flex justify-center items-center">
                             <div className="mr-2">
                                 <DictionaryIconLink
                                     linkUrl={`mkdictionaries:///?text=${term?.term}`}
@@ -346,6 +417,20 @@ export const Play = (props: PlayProps) => {
                                     openNewWindow={true}
                                 />
                             </div>
+                            <Button
+                                className="p-button-text ml-4"
+                                icon="pi pi-copy"
+                                onClick={() => copy(term?.term || "")}
+                            />
+                            <Button
+                                className="p-button-text ml-2"
+                                icon={`pi ${
+                                    pronouncing
+                                        ? "pi-volume-off"
+                                        : "pi-volume-up"
+                                }`}
+                                onClick={() => tempPronounce(term?.term || "")}
+                            />
                         </div>
                         <div className="w-full mb-4 flex justify-center">
                             <Button
@@ -372,14 +457,14 @@ export const Play = (props: PlayProps) => {
                         <div className="w-full mb-4 flex justify-center max-h-64">
                             <ScrollPanel className="w-full max-h-64">
                                 <div
-                                    className="ql-editor"
+                                    className="ql-editor break-all"
                                     dangerouslySetInnerHTML={{
                                         __html: term?.note || "",
                                     }}
                                 />
                             </ScrollPanel>
                         </div>
-                        <div>
+                        <div className="mb-6">
                             {term?.videos.length ? (
                                 <YoutubeGallery
                                     videos={term.videos}
@@ -393,6 +478,17 @@ export const Play = (props: PlayProps) => {
                                 <div></div>
                             )}
                         </div>
+                        <div>
+                            <div>
+                                {term?.tags.map((tag, i) => (
+                                    <Tag
+                                        key={i}
+                                        value={tag.tag}
+                                        className="mr-1"
+                                    ></Tag>
+                                ))}
+                            </div>
+                        </div>
                     </Card>
                 </div>
             ) : (
@@ -403,6 +499,21 @@ export const Play = (props: PlayProps) => {
                                 icon="pi pi-play"
                                 className="p-button-rounded play-button"
                                 onClick={() => setIsPlaying(true)}
+                            />
+                        </div>
+                        <div className="w-full mb-4">
+                            <label className="block mb-2 font-semibold">
+                                Don't pronounce when videos play
+                            </label>
+                            <InputSwitch
+                                checked={dontPronounceWhenVideosPlay}
+                                onChange={(e) => {
+                                    setDontPronounceWhenVideosPlay(e.value);
+                                    setValue(
+                                        "dontPronounceWhenVideosPlay",
+                                        e.value
+                                    );
+                                }}
                             />
                         </div>
                         <div className="w-full mb-4">

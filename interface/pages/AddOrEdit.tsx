@@ -1,11 +1,17 @@
 import { IpcRendererEvent, ipcRenderer } from "electron";
+import $ from "jquery";
 import { Button } from "primereact/button";
 import { Calendar, CalendarChangeParams } from "primereact/calendar";
 import { Card } from "primereact/card";
 import { Chips, ChipsChangeParams } from "primereact/chips";
 import { Editor, EditorTextChangeParams } from "primereact/editor";
 import { InputText, InputTextProps } from "primereact/inputtext";
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+    KeyboardEventHandler,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -51,9 +57,9 @@ export const AddOrEdit = (props: AddOrEditProps) => {
     );
     const [videoStarts, setVideoStarts] = useState<
         Term["videos"][number]["start"][]
-    >(["00:00"]);
+    >(["00:00:00"]);
     const [videoEnds, setVideoEnds] = useState<Term["videos"][number]["end"][]>(
-        ["00:00"]
+        ["00:00:00"]
     );
     const [tags, setTags] = useState<Tag["tag"][]>([]);
     const [status, setStatus] = useState<Memory["status"] | null>(null);
@@ -225,8 +231,10 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                 tmpVideoEnds.push(video.end);
             }
             setVideoUrls(tmpVideoUrls.length ? tmpVideoUrls : [""]);
-            setVideoStarts(tmpVideoStarts.length ? tmpVideoStarts : ["00:00"]);
-            setVideoEnds(tmpVideoEnds.length ? tmpVideoEnds : ["00:00"]);
+            setVideoStarts(
+                tmpVideoStarts.length ? tmpVideoStarts : ["00:00:00"]
+            );
+            setVideoEnds(tmpVideoEnds.length ? tmpVideoEnds : ["00:00:00"]);
 
             const tmpTags = term.tags?.map((tag) => tag.tag) || [];
             setTags(tmpTags);
@@ -236,13 +244,14 @@ export const AddOrEdit = (props: AddOrEditProps) => {
             setId(null);
             setText("");
             setIsTextError(false);
-            setNote("");
             setVideoUrls([""]);
-            setVideoStarts(["00:00"]);
-            setVideoEnds(["00:00"]);
+            setVideoStarts(["00:00:00"]);
+            setVideoEnds(["00:00:00"]);
             setTags([]);
             setStatus(null);
             setSuspend(null);
+            setNote("");
+            $('.ql-editor[contenteditable="true"]').children().remove();
         }
     };
 
@@ -251,9 +260,20 @@ export const AddOrEdit = (props: AddOrEditProps) => {
         setText(value);
     };
 
+    const onLoadEditor = () => {
+        $(".p-editor-toolbar span").attr("tabindex", "-1");
+    };
+
     const onChangeEditor = (e: EditorTextChangeParams) => {
         const html = e.htmlValue || "";
         setNote(html);
+    };
+
+    const onEditorKeyDown: KeyboardEventHandler<HTMLDivElement> = (e) => {
+        if (e.code === "Tab") {
+            $("#video-url0").get(0)?.focus();
+            e.preventDefault();
+        }
     };
 
     const onChangeVideoUrl = (i: number, e: InputTextOnChangeEvent) => {
@@ -279,8 +299,8 @@ export const AddOrEdit = (props: AddOrEditProps) => {
 
     const onClickAddVideoInput = () => {
         setVideoUrls([...videoUrls, ""]);
-        setVideoStarts([...videoStarts, "00:00"]);
-        setVideoEnds([...videoEnds, "00:00"]);
+        setVideoStarts([...videoStarts, "00:00:00"]);
+        setVideoEnds([...videoEnds, "00:00:00"]);
     };
 
     const onClickDeleteInput = (i: number) => {
@@ -390,7 +410,6 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                     <InputText
                         value={text}
                         onChange={onChangeTermText}
-                        id="text"
                         className={`block w-full${
                             isTextError ? " p-invalid" : ""
                         }`}
@@ -404,6 +423,8 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                         headerTemplate={EditorHeader}
                         onTextChange={onChangeEditor}
                         value={note}
+                        onLoad={onLoadEditor}
+                        onKeyDownCapture={onEditorKeyDown}
                     />
                 </div>
                 <div className="field mb-4">
@@ -439,9 +460,9 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                                     <InputText
                                         value={videoUrl}
                                         onChange={(e) => onChangeVideoUrl(i, e)}
-                                        id="text"
                                         className="block w-full"
                                         placeholder="YouTube Video URL"
+                                        id={`video-url${i}`}
                                     />
                                 </div>
                                 <div className="flex">
@@ -451,18 +472,20 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                                             onChange={(e) =>
                                                 onChangeVideoStart(i, e)
                                             }
-                                            id="text"
                                             className="w-2/5 mr-4"
                                             placeholder="Start"
+                                            type="time"
+                                            step={1}
                                         />
                                         <InputText
                                             value={videoEnds[i]}
                                             onChange={(e) =>
                                                 onChangeVideoEnd(i, e)
                                             }
-                                            id="text"
                                             className="w-2/5"
                                             placeholder="End"
+                                            type="time"
+                                            step={1}
                                         />
                                     </div>
                                     <div className="flex flex-end">
