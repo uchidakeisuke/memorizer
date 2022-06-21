@@ -444,7 +444,7 @@ export const Play = (props: PlayProps) => {
                                 onClick={memorized}
                             />
                         </div>
-                        <div className="w-full mb-4 flex justify-center">
+                        <div className="w-full mb-4 flex justify-center py-4">
                             <p className="text-2xl font-semibold">
                                 <Link
                                     to={{ pathname: "/view" }}
