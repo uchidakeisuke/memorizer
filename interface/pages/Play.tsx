@@ -8,7 +8,7 @@ import { MultiSelect } from "primereact/multiselect";
 import { ScrollPanel } from "primereact/scrollpanel";
 import { Tag } from "primereact/tag";
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
     GetTargetTermsRequestData,
@@ -62,6 +62,8 @@ export const Play = (props: PlayProps) => {
     const initialSelectedTags = getValue("selectedTags", []);
     const initialSelectedStatus = getValue("selectedStatus", []);
     const initialIntervalSec = getValue("intervalSec", 2);
+
+    const navigate = useNavigate();
 
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -419,17 +421,21 @@ export const Play = (props: PlayProps) => {
                             </div>
                             <Button
                                 className="p-button-text ml-4"
-                                icon="pi pi-copy"
-                                onClick={() => copy(term?.term || "")}
-                            />
-                            <Button
-                                className="p-button-text ml-2"
                                 icon={`pi ${
                                     pronouncing
                                         ? "pi-volume-off"
                                         : "pi-volume-up"
                                 }`}
                                 onClick={() => tempPronounce(term?.term || "")}
+                            />
+                            <Button
+                                className="p-button-text ml-2"
+                                icon="pi pi-reply"
+                                onClick={() =>
+                                    navigate("/view", {
+                                        state: { id: term?.id },
+                                    })
+                                }
                             />
                         </div>
                         <div className="w-full mb-4 flex justify-center">
@@ -445,13 +451,11 @@ export const Play = (props: PlayProps) => {
                             />
                         </div>
                         <div className="w-full mb-4 flex justify-center py-4">
-                            <p className="text-2xl font-semibold">
-                                <Link
-                                    to={{ pathname: "/view" }}
-                                    state={{ id: term?.id }}
-                                >
-                                    {term?.term}
-                                </Link>
+                            <p
+                                className="text-2xl font-semibold cursor-pointer"
+                                onClick={() => copy(term?.term || "")}
+                            >
+                                {term?.term}
                             </p>
                         </div>
                         <div className="w-full mb-4 flex justify-center max-h-64">
