@@ -17,13 +17,26 @@ import { Term } from "../typeorm/entities";
 import {
     AddTermRequest,
     DeleteTermsRequest,
+    GetAllTagsRequest,
+    GetAllTermsRequest,
     GetTargetTermsRequest,
     GetTermRequest,
     OpenDictionaryRequest,
+    ToggleAlwaysOnTopRequest,
     UpdateStatusAndSuspendRequest,
     UpdateTermRequest,
 } from "./request";
-import { AddTermResponse } from "./response";
+import {
+    AddTermResponse,
+    DeleteTermsResponse,
+    GetAllTagsResponse,
+    GetAllTermsResponse,
+    GetTargetTermsResponse,
+    GetTermResponse,
+    ToggleAlwaysOnTopResponse,
+    UpdateStatusAndSuspendResponse,
+    UpdateTermResponse,
+} from "./response";
 
 const ipcMainSend = <T>(
     event: Electron.IpcMainEvent,
@@ -35,6 +48,7 @@ const ipcMainSend = <T>(
 
 const ipcMainAddTerm = async () => {
     ipcMain.on("addTerm", async (event, args: AddTermRequest) => {
+        const channel = args.channel;
         try {
             const data = args.data;
             const createdTerm = await createTerm({
@@ -50,18 +64,18 @@ const ipcMainAddTerm = async () => {
             let term: Term | null = null;
             if (termId && typeof termId === "number") {
                 term = await getTermById(termId);
-                ipcMainSend<AddTermResponse>(event, "didAddTerm", {
+                ipcMainSend<AddTermResponse>(event, channel, {
                     result: Boolean(term),
                     data: term,
                 });
             } else {
-                ipcMainSend<AddTermResponse>(event, "didAddTerm", {
+                ipcMainSend<AddTermResponse>(event, channel, {
                     result: false,
                     data: null,
                 });
             }
         } catch (error) {
-            ipcMainSend<AddTermResponse>(event, "didAddTerm", {
+            ipcMainSend<AddTermResponse>(event, channel, {
                 result: false,
                 data: null,
             });
@@ -71,6 +85,7 @@ const ipcMainAddTerm = async () => {
 
 const ipcMainGetTerm = async () => {
     ipcMain.on("getTerm", async (event, args: GetTermRequest) => {
+        const channel = args.channel;
         try {
             const data = args.data;
             const termId = data.id;
@@ -79,20 +94,27 @@ const ipcMainGetTerm = async () => {
             if (termId && typeof termId === "number") {
                 term = await getTermById(termId);
             } else {
-                event.sender.send("didGetTerm", { result: true, data: null });
+                ipcMainSend<GetTermResponse>(event, channel, {
+                    result: true,
+                    data: null,
+                });
             }
-            event.sender.send("didGetTerm", {
+            ipcMainSend<GetTermResponse>(event, channel, {
                 result: Boolean(term),
                 data: term,
             });
         } catch (error) {
-            event.sender.send("didAddTerm", { result: false, data: null });
+            ipcMainSend<GetTermResponse>(event, channel, {
+                result: false,
+                data: null,
+            });
         }
     });
 };
 
 const ipcMainUpdateTerm = async () => {
     ipcMain.on("updateTerm", async (event, args: UpdateTermRequest) => {
+        const channel = args.channel;
         try {
             const data = args.data;
             await updateTerm({
@@ -103,61 +125,83 @@ const ipcMainUpdateTerm = async () => {
                 tags: data.tags,
             });
             const term = await getTermById(data.id);
-            event.sender.send("didUpdateTerm", {
+            ipcMainSend<UpdateTermResponse>(event, channel, {
                 result: Boolean(term),
                 data: term,
             });
         } catch (error) {
-            event.sender.send("didAddTerm", { result: false, data: null });
+            ipcMainSend<UpdateTermResponse>(event, channel, {
+                result: false,
+                data: null,
+            });
         }
     });
 };
 
 const ipcMainGetAllTerms = async () => {
-    ipcMain.on("getAllTerms", async (event) => {
+    ipcMain.on("getAllTerms", async (event, args: GetAllTermsRequest) => {
+        const channel = args.channel;
         try {
             const allTerms = await getAllTerms();
-            event.sender.send("didGetAllTerms", {
+            ipcMainSend<GetAllTermsResponse>(event, channel, {
                 result: true,
                 data: allTerms,
             });
         } catch (error) {
-            event.sender.send("didGetAllTerms", { result: false, data: null });
+            ipcMainSend<GetAllTermsResponse>(event, channel, {
+                result: false,
+                data: null,
+            });
         }
     });
 };
 
 const ipcMainDeleteTerms = async () => {
     ipcMain.on("deleteTerms", async (event, args: DeleteTermsRequest) => {
+        const channel = args.channel;
         try {
             const data = args.data;
             const ids = data.ids;
             await deleteTerms(ids);
             const terms = await getTermByIds(ids);
             if (!terms || !terms.length) {
-                event.sender.send("didDeleteTerms", { result: true });
+                ipcMainSend<DeleteTermsResponse>(event, channel, {
+                    result: true,
+                });
             } else {
-                event.sender.send("didDeleteTerms", { result: false });
+                ipcMainSend<DeleteTermsResponse>(event, channel, {
+                    result: false,
+                });
             }
         } catch (error) {
-            event.sender.send("didDeleteTerms", { result: false });
+            ipcMainSend<DeleteTermsResponse>(event, channel, {
+                result: false,
+            });
         }
     });
 };
 
 const ipcMainGetAllTags = async () => {
-    ipcMain.on("getAllTags", async (event) => {
+    ipcMain.on("getAllTags", async (event, args: GetAllTagsRequest) => {
+        const channel = args.channel;
         try {
             const allTags = await getAllTags();
-            event.sender.send("didGetAllTags", { result: true, data: allTags });
+            ipcMainSend<GetAllTagsResponse>(event, channel, {
+                result: true,
+                data: allTags,
+            });
         } catch (error) {
-            event.sender.send("didGetAllTags", { result: false, data: null });
+            ipcMainSend<GetAllTagsResponse>(event, channel, {
+                result: false,
+                data: null,
+            });
         }
     });
 };
 
 const ipcMainGetTargetTerms = async () => {
     ipcMain.on("getTargetTerms", async (event, args: GetTargetTermsRequest) => {
+        const channel = args.channel;
         try {
             const data = args.data;
             const untilOrEqual = data.untilOrEqual;
@@ -168,12 +212,12 @@ const ipcMainGetTargetTerms = async () => {
                 tags,
                 status,
             });
-            event.sender.send("didGetTargetTerms", {
+            ipcMainSend<GetTargetTermsResponse>(event, channel, {
                 result: true,
                 data: targetTerms,
             });
         } catch (error) {
-            event.sender.send("didGetTargetTerms", {
+            ipcMainSend<GetTargetTermsResponse>(event, channel, {
                 result: false,
                 data: null,
             });
@@ -199,6 +243,7 @@ const ipcMainUpdateStatusAndSuspend = async () => {
     ipcMain.on(
         "updateStatusAndSuspend",
         async (event, args: UpdateStatusAndSuspendRequest) => {
+            const channel = args.channel;
             try {
                 const data = args.data;
                 if (data.status !== undefined && data.status !== null) {
@@ -208,12 +253,12 @@ const ipcMainUpdateStatusAndSuspend = async () => {
                     await updateSuspend(data.id, data.suspend);
                 }
                 const term = await getTermById(data.id);
-                event.sender.send("didUpdateStatusAndSuspend", {
-                    result: true,
+                ipcMainSend<UpdateStatusAndSuspendResponse>(event, channel, {
+                    result: Boolean(term),
                     data: term,
                 });
             } catch (error) {
-                event.sender.send("didUpdateStatusAndSuspend", {
+                ipcMainSend<UpdateStatusAndSuspendResponse>(event, channel, {
                     result: false,
                     data: null,
                 });
@@ -223,9 +268,15 @@ const ipcMainUpdateStatusAndSuspend = async () => {
 };
 
 const ipcMainToggleAlwaysOnTop = (mainWindow: BrowserWindow) => {
-    ipcMain.on("toggleAlwaysOnTop", () => {
+    ipcMain.on("toggleAlwaysOnTop", (event, args: ToggleAlwaysOnTopRequest) => {
+        const channel = args.channel;
+        const value = args.data.value;
+        mainWindow.setAlwaysOnTop(value);
         const isAlwaysOnTop = mainWindow.isAlwaysOnTop();
-        mainWindow.setAlwaysOnTop(!isAlwaysOnTop);
+        ipcMainSend<ToggleAlwaysOnTopResponse>(event, channel, {
+            result: true,
+            data: isAlwaysOnTop,
+        });
     });
 };
 

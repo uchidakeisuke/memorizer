@@ -7,7 +7,7 @@ import { Tag } from "primereact/tag";
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { GetTermRequestData, ipcRendererSend } from "../../app/ipc/request";
+import { GetTermRequest, ipcRendererSend } from "../../app/ipc/request";
 import { GetTermResponse } from "../../app/ipc/response";
 import { Term } from "../../app/typeorm/entities";
 import { ShowMessage } from "../App";
@@ -67,14 +67,14 @@ export const View = (props: ViewProps) => {
     };
 
     useEffect(() => {
-        ipcRenderer.on("didGetTerm", didGetTerm);
+        ipcRenderer.on("viewDidGetTerm", didGetTerm);
         const updateSucceeded = (location.state as { updateSucceeded: boolean })
             .updateSucceeded;
         if (updateSucceeded) {
             props.showMessage("success", successSummary, "A term was updated");
         }
         return () => {
-            ipcRenderer.off("didGetTerm", didGetTerm);
+            ipcRenderer.off("viewDidGetTerm", didGetTerm);
             speechSynthesis.cancel();
         };
     }, []);
@@ -82,8 +82,9 @@ export const View = (props: ViewProps) => {
     useEffect(() => {
         const termId = (location.state as { id: number }).id;
         if (termId) {
-            ipcRendererSend<GetTermRequestData>("getTerm", {
-                id: termId,
+            ipcRendererSend<GetTermRequest>("getTerm", {
+                data: { id: termId },
+                channel: "viewDidGetTerm",
             });
         }
     }, [location.state]);
@@ -134,12 +135,12 @@ export const View = (props: ViewProps) => {
                             />
                         </div>
                         <Button
-                            className="p-button-text ml-4"
+                            className="p-button-text p-button-outlined ml-4"
                             icon="pi pi-copy"
                             onClick={() => copy(term?.term || "")}
                         />
                         <Button
-                            className="p-button-text ml-2"
+                            className="p-button-text p-button-outlined ml-2"
                             icon={`pi ${
                                 pronouncing ? "pi-volume-off" : "pi-volume-up"
                             }`}

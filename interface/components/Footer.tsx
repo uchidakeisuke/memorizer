@@ -1,7 +1,12 @@
-import { ipcRenderer } from "electron";
+import { IpcRendererEvent, ipcRenderer } from "electron";
 import { SpeedDial } from "primereact/speeddial";
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 
+import {
+    ToggleAlwaysOnTopRequest,
+    ipcRendererSend,
+} from "../../app/ipc/request";
+import { ToggleAlwaysOnTopResponse } from "../../app/ipc/response";
 import { getValue, setValue } from "../../shared/local_store";
 import "../styles/footer.scss";
 
@@ -15,10 +20,27 @@ export const Footer = (props: FooterProps) => {
     const [alwaysOnTop, setAlwaysOnTop] = useState<boolean>(initialAlwaysOnTop);
 
     const changeAlwaysOnTop = () => {
-        setValue("alwaysOnTop", !alwaysOnTop);
-        setAlwaysOnTop(!alwaysOnTop);
+        ipcRendererSend<ToggleAlwaysOnTopRequest>("toggleAlwaysOnTop", {
+            data: { value: !alwaysOnTop },
+            channel: "footerDidToggleAlwaysOnTop",
+        });
         ipcRenderer.send("toggleAlwaysOnTop");
     };
+
+    const didToggleAlwaysOnTop = (
+        event: IpcRendererEvent,
+        args: ToggleAlwaysOnTopResponse
+    ) => {
+        const data = args.data;
+        if (data) {
+            setValue("alwaysOnTop", data);
+            setAlwaysOnTop(data);
+        }
+    };
+
+    useEffect(() => {
+        ipcRenderer.on("footerDidToggleAlwaysOnTop", didToggleAlwaysOnTop);
+    }, []);
 
     const items = [
         {

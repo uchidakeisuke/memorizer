@@ -36,5 +36,10 @@ export type GetTargetTermsResponse = {
 
 export type UpdateStatusAndSuspendResponse = {
     result: boolean;
-    data: Term;
+    data: Term | null;
+};
+
+export type ToggleAlwaysOnTopResponse = {
+    result: boolean;
+    data: boolean;
 };

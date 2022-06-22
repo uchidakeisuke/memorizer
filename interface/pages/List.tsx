@@ -3,13 +3,17 @@ import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Column } from "primereact/column";
 import { ConfirmDialog } from "primereact/confirmdialog";
-import { DataTable } from "primereact/datatable";
+import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import { InputText, InputTextProps } from "primereact/inputtext";
 import { Toolbar } from "primereact/toolbar";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { DeleteTermsRequestData, ipcRendererSend } from "../../app/ipc/request";
+import {
+    DeleteTermsRequest,
+    GetAllTermsRequest,
+    ipcRendererSend,
+} from "../../app/ipc/request";
 import {
     DeleteTermsResponse,
     GetAllTermsResponse,
@@ -59,17 +63,21 @@ export const List = (props: ListProps) => {
                 "Failed to delete terms..."
             );
         }
-        ipcRenderer.send("getAllTerms");
+        ipcRendererSend<GetAllTermsRequest>("getAllTerms", {
+            channel: "listDidGetAllTerms",
+        });
         setSelectedTerms(null);
     };
 
     useEffect(() => {
-        ipcRenderer.send("getAllTerms");
-        ipcRenderer.on("didGetAllTerms", didGetAllTerms);
-        ipcRenderer.on("didDeleteTerms", didDeleteTerms);
+        ipcRendererSend<GetAllTermsRequest>("getAllTerms", {
+            channel: "listDidGetAllTerms",
+        });
+        ipcRenderer.on("listDidGetAllTerms", didGetAllTerms);
+        ipcRenderer.on("listDidDeleteTerms", didDeleteTerms);
         return () => {
-            ipcRenderer.off("didGetAllTerms", didGetAllTerms);
-            ipcRenderer.off("didDeleteTerms", didDeleteTerms);
+            ipcRenderer.off("listDidGetAllTerms", didGetAllTerms);
+            ipcRenderer.off("listDidDeleteTerms", didDeleteTerms);
         };
     }, []);
 
@@ -78,8 +86,9 @@ export const List = (props: ListProps) => {
             .filter((term) => term?.id)
             .map((term) => term.id);
         if (!ids.length) return;
-        ipcRendererSend<DeleteTermsRequestData>("deleteTerms", {
-            ids: ids,
+        ipcRendererSend<DeleteTermsRequest>("deleteTerms", {
+            data: { ids: ids },
+            channel: "listDidDeleteTerms",
         });
     };
 
@@ -125,13 +134,15 @@ export const List = (props: ListProps) => {
 
     const columnBody = (rowData: { id: number; term: string }) => {
         return (
-            <Link
-                to={{ pathname: "/view" }}
-                state={{ id: rowData.id }}
-                className="text-blue-500"
-            >
-                {rowData.term}
-            </Link>
+            <div className="flex items-center justify-between">
+                <Link
+                    to={{ pathname: "/view" }}
+                    state={{ id: rowData.id }}
+                    className="text-blue-500"
+                >
+                    {rowData.term}
+                </Link>
+            </div>
         );
     };
 

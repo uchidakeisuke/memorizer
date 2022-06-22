@@ -2,11 +2,8 @@ import { ipcRenderer } from "electron";
 
 import { Memory, Tag, Term } from "../typeorm/entities";
 
-export const ipcRendererSend = <T>(channel: string, data: T) => {
-    const requestBody = {
-        data: data,
-    };
-    ipcRenderer.send(channel, requestBody);
+export const ipcRendererSend = <T>(channel: string, request: T) => {
+    ipcRenderer.send(channel, request);
 };
 
 export type AddTermRequestData = {
@@ -22,6 +19,7 @@ export type AddTermRequestData = {
 
 export type AddTermRequest = {
     data: AddTermRequestData;
+    channel: string;
 };
 
 export type UpdateTermRequestData = {
@@ -38,6 +36,7 @@ export type UpdateTermRequestData = {
 
 export type UpdateTermRequest = {
     data: UpdateTermRequestData;
+    channel: string;
 };
 
 export type GetTermRequestData = {
@@ -46,6 +45,7 @@ export type GetTermRequestData = {
 
 export type GetTermRequest = {
     data: GetTermRequestData;
+    channel: string;
 };
 
 export type DeleteTermsRequestData = {
@@ -54,6 +54,7 @@ export type DeleteTermsRequestData = {
 
 export type DeleteTermsRequest = {
     data: DeleteTermsRequestData;
+    channel: string;
 };
 
 export type GetTargetTermsRequestData = {
@@ -64,6 +65,7 @@ export type GetTargetTermsRequestData = {
 
 export type GetTargetTermsRequest = {
     data: GetTargetTermsRequestData;
+    channel: string;
 };
 
 export type OpenDictionaryRequestData = {
@@ -82,4 +84,22 @@ export type UpdateStatusAndSuspendRequestData = {
 
 export type UpdateStatusAndSuspendRequest = {
     data: UpdateStatusAndSuspendRequestData;
+    channel: string;
+};
+
+export type ToggleAlwaysOnTopRequestData = {
+    value: boolean;
+};
+
+export type ToggleAlwaysOnTopRequest = {
+    data: ToggleAlwaysOnTopRequestData;
+    channel: string;
+};
+
+export type GetAllTermsRequest = {
+    channel: string;
+};
+
+export type GetAllTagsRequest = {
+    channel: string;
 };

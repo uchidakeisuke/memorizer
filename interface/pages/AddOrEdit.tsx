@@ -15,10 +15,10 @@ import React, {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import {
-    AddTermRequestData,
-    GetTermRequestData,
-    UpdateStatusAndSuspendRequestData,
-    UpdateTermRequestData,
+    AddTermRequest,
+    GetTermRequest,
+    UpdateStatusAndSuspendRequest,
+    UpdateTermRequest,
     ipcRendererSend,
 } from "../../app/ipc/request";
 import {
@@ -141,17 +141,20 @@ export const AddOrEdit = (props: AddOrEditProps) => {
     };
 
     useEffect(() => {
-        ipcRenderer.on("didAddTerm", didAddTerm);
-        ipcRenderer.on("didUpdateTerm", didUpdateTerm);
-        ipcRenderer.on("didGetTerm", didGetTerm);
-        ipcRenderer.on("didUpdateStatusAndSuspend", didUpdateStatusAndSuspend);
+        ipcRenderer.on("addOrEditDidAddTerm", didAddTerm);
+        ipcRenderer.on("addOrEditDidUpdateTerm", didUpdateTerm);
+        ipcRenderer.on("addOrEditDidGetTerm", didGetTerm);
+        ipcRenderer.on(
+            "addOrEditDidUpdateStatusAndSuspend",
+            didUpdateStatusAndSuspend
+        );
         document.addEventListener("keydown", onKeyDown);
         return () => {
-            ipcRenderer.off("didAddTerm", didAddTerm);
-            ipcRenderer.off("didUpdateTerm", didUpdateTerm);
-            ipcRenderer.off("didGetTerm", didGetTerm);
+            ipcRenderer.off("addOrEditDidAddTerm", didAddTerm);
+            ipcRenderer.off("addOrEditDidUpdateTerm", didUpdateTerm);
+            ipcRenderer.off("addOrEditDidGetTerm", didGetTerm);
             ipcRenderer.off(
-                "didUpdateStatusAndSuspend",
+                "addOrEditDidUpdateStatusAndSuspend",
                 didUpdateStatusAndSuspend
             );
             document.removeEventListener("keydown", onKeyDown);
@@ -164,8 +167,11 @@ export const AddOrEdit = (props: AddOrEditProps) => {
         }
         const termId = (location.state as { id: number })?.id;
         if (termId) {
-            ipcRendererSend<GetTermRequestData>("getTerm", {
-                id: termId,
+            ipcRendererSend<GetTermRequest>("getTerm", {
+                data: {
+                    id: termId,
+                },
+                channel: "addOrEditDidGetTerm",
             });
         } else {
             refresh(null);
@@ -190,28 +196,41 @@ export const AddOrEdit = (props: AddOrEditProps) => {
         }
 
         const videos = createVideoArray();
-        ipcRendererSend<UpdateTermRequestData>("updateTerm", {
-            id: id,
-            term: text,
-            note: note,
-            videos: videos,
-            tags: tags,
+        ipcRendererSend<UpdateTermRequest>("updateTerm", {
+            data: {
+                id: id,
+                term: text,
+                note: note,
+                videos: videos,
+                tags: tags,
+            },
+            channel: "addOrEditDidUpdateTerm",
         });
         const statusToUpdate = status || undefined;
         const suspendToUpdate = suspend || undefined;
-        ipcRendererSend<UpdateStatusAndSuspendRequestData>(
+        ipcRendererSend<UpdateStatusAndSuspendRequest>(
             "updateStatusAndSuspend",
-            { id: id, status: statusToUpdate, suspend: suspendToUpdate }
+            {
+                data: {
+                    id: id,
+                    status: statusToUpdate,
+                    suspend: suspendToUpdate,
+                },
+                channel: "addOrEditDidUpdateStatusAndSuspend",
+            }
         );
     };
 
     const add = () => {
         const videos = createVideoArray();
-        ipcRendererSend<AddTermRequestData>("addTerm", {
-            term: text,
-            note: note,
-            videos: videos,
-            tags: tags,
+        ipcRendererSend<AddTermRequest>("addTerm", {
+            data: {
+                term: text,
+                note: note,
+                videos: videos,
+                tags: tags,
+            },
+            channel: "addOrEditDidAddTerm",
         });
     };
 

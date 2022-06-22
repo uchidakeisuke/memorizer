@@ -8,12 +8,12 @@ import { MultiSelect } from "primereact/multiselect";
 import { ScrollPanel } from "primereact/scrollpanel";
 import { Tag } from "primereact/tag";
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
-    GetTargetTermsRequestData,
-    OpenDictionaryRequestData,
-    UpdateStatusAndSuspendRequestData,
+    GetTargetTermsRequest,
+    OpenDictionaryRequest,
+    UpdateStatusAndSuspendRequest,
     ipcRendererSend,
 } from "../../app/ipc/request";
 import {
@@ -168,16 +168,19 @@ export const Play = (props: PlayProps) => {
     useEffect(() => {
         ipcRenderer.send("getAllTags");
         ipcRenderer.on("didGetAllTags", didGetAllTags);
-        ipcRenderer.on("didGetTargetTerms", didGetTargetTerms);
-        ipcRenderer.on("didUpdateStatusAndSuspend", didUpdateStatusAndSuspend);
+        ipcRenderer.on("playDidGetTargetTerms", didGetTargetTerms);
+        ipcRenderer.on(
+            "playDidUpdateStatusAndSuspend",
+            didUpdateStatusAndSuspend
+        );
         document.addEventListener("keydown", togglePause);
         return () => {
             resetPlayer();
             setIsPlaying(false);
             ipcRenderer.off("didGetAllTags", didGetAllTags);
-            ipcRenderer.off("didGetTargetTerms", didGetTargetTerms);
+            ipcRenderer.off("playDidGetTargetTerms", didGetTargetTerms);
             ipcRenderer.off(
-                "didUpdateStatusAndSuspend",
+                "playDidUpdateStatusAndSuspend",
                 didUpdateStatusAndSuspend
             );
             document.removeEventListener("keydown", togglePause);
@@ -189,10 +192,13 @@ export const Play = (props: PlayProps) => {
             const untilOrEqual = useMemorizingTime
                 ? zonedTimeToUtc(new Date(), "Asia/Tokyo")
                 : null;
-            ipcRendererSend<GetTargetTermsRequestData>("getTargetTerms", {
-                untilOrEqual: untilOrEqual,
-                tags: selectedTags,
-                status: selectedStatus,
+            ipcRendererSend<GetTargetTermsRequest>("getTargetTerms", {
+                data: {
+                    untilOrEqual: untilOrEqual,
+                    tags: selectedTags,
+                    status: selectedStatus,
+                },
+                channel: "playDidGetTargetTerms",
             });
         }
     }, [isPlaying]);
@@ -255,8 +261,10 @@ export const Play = (props: PlayProps) => {
                 : intervalSec;
 
         if (nextTerm?.term) {
-            ipcRendererSend<OpenDictionaryRequestData>("openDictionary", {
-                term: nextTerm.term,
+            ipcRendererSend<OpenDictionaryRequest>("openDictionary", {
+                data: {
+                    term: nextTerm.term,
+                },
             });
             const pronounceThis =
                 dontPronounceWhenVideosPlay && nextTerm.videos.length
@@ -324,11 +332,14 @@ export const Play = (props: PlayProps) => {
         }
         if (term?.memory.status && term.memory.status !== 6) {
             const statusToUpdate = term.memory.status + 1;
-            ipcRendererSend<UpdateStatusAndSuspendRequestData>(
+            ipcRendererSend<UpdateStatusAndSuspendRequest>(
                 "updateStatusAndSuspend",
                 {
-                    id: termId,
-                    status: statusToUpdate,
+                    data: {
+                        id: termId,
+                        status: statusToUpdate,
+                    },
+                    channel: "playDidUpdateStatusAndSuspend",
                 }
             );
         }
@@ -342,11 +353,14 @@ export const Play = (props: PlayProps) => {
         }
         if (term?.memory.status && term?.memory.status !== 1) {
             const statusToUpdate = term.memory.status - 1;
-            ipcRendererSend<UpdateStatusAndSuspendRequestData>(
+            ipcRendererSend<UpdateStatusAndSuspendRequest>(
                 "updateStatusAndSuspend",
                 {
-                    id: termId,
-                    status: statusToUpdate,
+                    data: {
+                        id: termId,
+                        status: statusToUpdate,
+                    },
+                    channel: "playDidUpdateStatusAndSuspend",
                 }
             );
         }
@@ -420,7 +434,7 @@ export const Play = (props: PlayProps) => {
                                 />
                             </div>
                             <Button
-                                className="p-button-text ml-4"
+                                className="p-button-text p-button-outlined ml-4"
                                 icon={`pi ${
                                     pronouncing
                                         ? "pi-volume-off"
@@ -429,7 +443,7 @@ export const Play = (props: PlayProps) => {
                                 onClick={() => tempPronounce(term?.term || "")}
                             />
                             <Button
-                                className="p-button-text ml-2"
+                                className="p-button-text p-button-outlined ml-2"
                                 icon="pi pi-reply"
                                 onClick={() =>
                                     navigate("/view", {
