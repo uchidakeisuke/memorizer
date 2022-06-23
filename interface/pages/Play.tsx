@@ -511,9 +511,9 @@ export const Play = (props: PlayProps) => {
                             </div>
                         </div>
                         <div className="w-full mb-4 flex justify-center max-h-64">
-                            <ScrollPanel className="w-full max-h-64">
+                            <ScrollPanel className="w-full max-h-64 rounded-md border border-gray-200">
                                 <div
-                                    className="ql-editor break-all"
+                                    className="ql-editor break-all p-6"
                                     dangerouslySetInnerHTML={{
                                         __html: term?.note || "",
                                     }}
