@@ -9,6 +9,8 @@ export const ipcRendererSend = <T>(channel: string, request: T) => {
 export type AddTermRequestData = {
     term: Term["term"];
     note: Term["note"];
+    lookUp: Term["lookUp"];
+    pronounce: Term["pronounce"];
     videos: {
         url: Term["videos"][number]["url"];
         start: Term["videos"][number]["start"];
@@ -26,6 +28,8 @@ export type UpdateTermRequestData = {
     id: Term["id"];
     term?: Term["term"];
     note?: Term["note"];
+    lookUp: Term["lookUp"];
+    pronounce: Term["pronounce"];
     videos?: {
         url: Term["videos"][number]["url"];
         start: Term["videos"][number]["start"];

@@ -42,6 +42,8 @@ export const View = (props: ViewProps) => {
         true,
         true,
         true,
+        true,
+        true,
     ]);
 
     const [pronouncing, setPronouncing] = useState(false);
@@ -116,20 +118,26 @@ export const View = (props: ViewProps) => {
                     <div className="flex items-center">
                         <div className="mr-2">
                             <DictionaryIconLink
-                                linkUrl={`mkdictionaries:///?text=${term?.term}`}
+                                linkUrl={`mkdictionaries:///?text=${
+                                    term?.lookUp ? term.lookUp : term?.term
+                                }`}
                                 imgPath={dictionariesImg}
                             />
                         </div>
                         <div className="mr-2">
                             <DictionaryIconLink
-                                linkUrl={`https://www.urbandictionary.com/define.php?term=${term?.term}`}
+                                linkUrl={`https://www.urbandictionary.com/define.php?term=${
+                                    term?.lookUp ? term.lookUp : term?.term
+                                }`}
                                 imgPath={urbandictionaryImg}
                                 openNewWindow={true}
                             />
                         </div>
                         <div>
                             <DictionaryIconLink
-                                linkUrl={`https://www.macmillandictionary.com/us/dictionary/american/${term?.term}`}
+                                linkUrl={`https://www.macmillandictionary.com/us/dictionary/american/${
+                                    term?.lookUp ? term.lookUp : term?.term
+                                }`}
                                 imgPath={macmillanImg}
                                 openNewWindow={true}
                             />
@@ -144,7 +152,13 @@ export const View = (props: ViewProps) => {
                             icon={`pi ${
                                 pronouncing ? "pi-volume-off" : "pi-volume-up"
                             }`}
-                            onClick={() => pronounce(term?.term || "")}
+                            onClick={() =>
+                                pronounce(
+                                    (term?.pronounce
+                                        ? term.pronounce
+                                        : term?.term) || ""
+                                )
+                            }
                         />
                     </div>
                     <div className="flex justify-end">
@@ -189,10 +203,34 @@ export const View = (props: ViewProps) => {
                 </div>
                 <div className="field mb-4">
                     <Fieldset
-                        legend="YouTube Videos"
+                        legend="Look Up"
                         toggleable
                         collapsed={collapsedStates[2]}
                         onToggle={(e) => onToggle(2, e.value)}
+                    >
+                        <div className="flex flex-col">
+                            <p className="mb-2">{term?.lookUp}</p>
+                        </div>
+                    </Fieldset>
+                </div>
+                <div className="field mb-4">
+                    <Fieldset
+                        legend="Pronounce"
+                        toggleable
+                        collapsed={collapsedStates[3]}
+                        onToggle={(e) => onToggle(3, e.value)}
+                    >
+                        <div className="flex flex-col">
+                            <p className="mb-2">{term?.pronounce}</p>
+                        </div>
+                    </Fieldset>
+                </div>
+                <div className="field mb-4">
+                    <Fieldset
+                        legend="YouTube Videos"
+                        toggleable
+                        collapsed={collapsedStates[4]}
+                        onToggle={(e) => onToggle(4, e.value)}
                     >
                         <YoutubeGallery
                             videos={term?.videos || []}
@@ -204,8 +242,8 @@ export const View = (props: ViewProps) => {
                     <Fieldset
                         legend="Tags"
                         toggleable
-                        collapsed={collapsedStates[3]}
-                        onToggle={(e) => onToggle(3, e.value)}
+                        collapsed={collapsedStates[5]}
+                        onToggle={(e) => onToggle(5, e.value)}
                     >
                         <div>
                             {term?.tags.map((tag, i) => (
@@ -222,8 +260,8 @@ export const View = (props: ViewProps) => {
                     <Fieldset
                         legend="Status"
                         toggleable
-                        collapsed={collapsedStates[4]}
-                        onToggle={(e) => onToggle(4, e.value)}
+                        collapsed={collapsedStates[6]}
+                        onToggle={(e) => onToggle(6, e.value)}
                     >
                         <div>{term?.memory.status}</div>
                     </Fieldset>
@@ -232,8 +270,8 @@ export const View = (props: ViewProps) => {
                     <Fieldset
                         legend="Suspend"
                         toggleable
-                        collapsed={collapsedStates[5]}
-                        onToggle={(e) => onToggle(5, e.value)}
+                        collapsed={collapsedStates[7]}
+                        onToggle={(e) => onToggle(7, e.value)}
                     >
                         <div>
                             {term?.memory.suspend

@@ -263,12 +263,14 @@ export const Play = (props: PlayProps) => {
         if (nextTerm?.term) {
             ipcRendererSend<OpenDictionaryRequest>("openDictionary", {
                 data: {
-                    term: nextTerm.term,
+                    term: nextTerm.lookUp ? nextTerm.lookUp : nextTerm.term,
                 },
             });
             const pronounceThis =
                 dontPronounceWhenVideosPlay && nextTerm.videos.length
                     ? ""
+                    : nextTerm.pronounce
+                    ? nextTerm.pronounce
                     : nextTerm.term;
             pronounce(pronounceThis);
             ipcRenderer.send("showThisApp");
@@ -415,20 +417,26 @@ export const Play = (props: PlayProps) => {
                         <div className="w-full mb-4 flex justify-center items-center">
                             <div className="mr-2">
                                 <DictionaryIconLink
-                                    linkUrl={`mkdictionaries:///?text=${term?.term}`}
+                                    linkUrl={`mkdictionaries:///?text=${
+                                        term?.lookUp ? term.lookUp : term?.term
+                                    }`}
                                     imgPath={dictionariesImg}
                                 />
                             </div>
                             <div className="mr-2">
                                 <DictionaryIconLink
-                                    linkUrl={`https://www.urbandictionary.com/define.php?term=${term?.term}`}
+                                    linkUrl={`https://www.urbandictionary.com/define.php?term=${
+                                        term?.lookUp ? term.lookUp : term?.term
+                                    }`}
                                     imgPath={urbandictionaryImg}
                                     openNewWindow={true}
                                 />
                             </div>
                             <div>
                                 <DictionaryIconLink
-                                    linkUrl={`https://www.macmillandictionary.com/us/dictionary/american/${term?.term}`}
+                                    linkUrl={`https://www.macmillandictionary.com/us/dictionary/american/${
+                                        term?.lookUp ? term.lookUp : term?.term
+                                    }`}
                                     imgPath={macmillanImg}
                                     openNewWindow={true}
                                 />
@@ -440,7 +448,13 @@ export const Play = (props: PlayProps) => {
                                         ? "pi-volume-off"
                                         : "pi-volume-up"
                                 }`}
-                                onClick={() => tempPronounce(term?.term || "")}
+                                onClick={() =>
+                                    tempPronounce(
+                                        (term?.pronounce
+                                            ? term.pronounce
+                                            : term?.term) || ""
+                                    )
+                                }
                             />
                             <Button
                                 className="p-button-text p-button-outlined ml-2"
@@ -471,6 +485,30 @@ export const Play = (props: PlayProps) => {
                             >
                                 {term?.term}
                             </p>
+                        </div>
+                        <div className="w-full mb-4">
+                            <div>
+                                <span className="font-semibold mr-2">
+                                    Look up:
+                                </span>
+                                <span
+                                    className="cursor-pointer"
+                                    onClick={() => copy(term?.lookUp || "")}
+                                >
+                                    {term?.lookUp}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="font-semibold mr-2">
+                                    Pronounce:
+                                </span>
+                                <span
+                                    className="cursor-pointer"
+                                    onClick={() => copy(term?.pronounce || "")}
+                                >
+                                    {term?.pronounce}
+                                </span>
+                            </div>
                         </div>
                         <div className="w-full mb-4 flex justify-center max-h-64">
                             <ScrollPanel className="w-full max-h-64">

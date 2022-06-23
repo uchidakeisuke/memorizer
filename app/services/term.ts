@@ -26,11 +26,15 @@ const isValidYoutubeVideo = (url: string, start: string, end: string) => {
 export const createTerm = async ({
     term,
     note = "",
+    lookUp,
+    pronounce,
     videos = [],
     tags = [],
 }: {
     term: Term["term"];
     note?: Term["note"];
+    lookUp?: Term["lookUp"];
+    pronounce?: Term["pronounce"];
     videos?: { url: Video["url"]; start: Video["start"]; end: Video["end"] }[];
     tags?: Tag["tag"][];
 }): Promise<{
@@ -45,6 +49,8 @@ export const createTerm = async ({
             const termResult = await termRepository.insert({
                 term: term,
                 note: note,
+                lookUp,
+                pronounce,
             });
 
             const termId = termResult.identifiers[0].id;
@@ -94,12 +100,16 @@ export const updateTerm = async ({
     id,
     term,
     note,
+    lookUp,
+    pronounce,
     videos,
     tags,
 }: {
     id: Term["id"];
     term?: Term["term"];
     note?: Term["note"];
+    lookUp?: Term["lookUp"];
+    pronounce?: Term["pronounce"];
     videos?: { url: Video["url"]; start: Video["start"]; end: Video["end"] }[];
     tags?: Tag["tag"][];
 }): Promise<{
@@ -112,12 +122,14 @@ export const updateTerm = async ({
             let termResult: UpdateResult | null = null;
             if (
                 (term !== null && term !== undefined) ||
-                (note !== null && note !== undefined)
+                (note !== null && note !== undefined) ||
+                (lookUp !== null && lookUp !== undefined) ||
+                (pronounce !== null && pronounce !== undefined)
             ) {
                 const termRepository = dataSource.getRepository(Term);
                 termResult = await termRepository.update(
                     { id: id },
-                    { term, note }
+                    { term, note, lookUp, pronounce }
                 );
             }
 

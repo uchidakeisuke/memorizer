@@ -23,6 +23,21 @@ export class Term {
     })
     note: string
 
+    @Column({
+        type: "text",
+        nullable: false,
+        default: "",
+        name: "look_up"
+    })
+    lookUp: string
+
+    @Column({
+        type: "text",
+        nullable: false,
+        default: ""
+    })
+    pronounce: string
+
     @OneToMany(() => Video, (video) => video.term)
     videos: Video[]
 

@@ -54,6 +54,8 @@ const ipcMainAddTerm = async () => {
             const createdTerm = await createTerm({
                 term: data.term,
                 note: data.note,
+                lookUp: data.lookUp,
+                pronounce: data.pronounce,
                 videos: data.videos,
                 tags: data.tags,
             });
@@ -121,6 +123,8 @@ const ipcMainUpdateTerm = async () => {
                 id: data.id,
                 term: data.term,
                 note: data.note,
+                lookUp: data.lookUp,
+                pronounce: data.pronounce,
                 videos: data.videos,
                 tags: data.tags,
             });

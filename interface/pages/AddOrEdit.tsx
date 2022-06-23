@@ -52,6 +52,8 @@ export const AddOrEdit = (props: AddOrEditProps) => {
     const [id, setId] = useState<Term["id"] | null>(null);
     const [text, setText] = useState("");
     const [note, setNote] = useState("");
+    const [lookUp, setLookUp] = useState<string>("");
+    const [pronounce, setPronounce] = useState<string>("");
     const [videoUrls, setVideoUrls] = useState<Term["videos"][number]["url"][]>(
         [""]
     );
@@ -201,6 +203,8 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                 id: id,
                 term: text,
                 note: note,
+                lookUp: lookUp,
+                pronounce: pronounce,
                 videos: videos,
                 tags: tags,
             },
@@ -227,6 +231,8 @@ export const AddOrEdit = (props: AddOrEditProps) => {
             data: {
                 term: text,
                 note: note,
+                lookUp: lookUp,
+                pronounce: pronounce,
                 videos: videos,
                 tags: tags,
             },
@@ -240,6 +246,8 @@ export const AddOrEdit = (props: AddOrEditProps) => {
             setText(term.term);
             setIsTextError(false);
             setNote(term.note);
+            setLookUp(term.lookUp);
+            setPronounce(term.pronounce);
 
             const tmpVideoUrls = [];
             const tmpVideoStarts = [];
@@ -270,6 +278,8 @@ export const AddOrEdit = (props: AddOrEditProps) => {
             setStatus(null);
             setSuspend(null);
             setNote("");
+            setLookUp("");
+            setPronounce("");
             $('.ql-editor[contenteditable="true"]').children().remove();
         }
     };
@@ -281,6 +291,16 @@ export const AddOrEdit = (props: AddOrEditProps) => {
 
     const onLoadEditor = () => {
         $(".p-editor-toolbar span").attr("tabindex", "-1");
+    };
+
+    const onChangeLookUp: InputTextProps["onChange"] = (e) => {
+        const value = e.target.value;
+        setLookUp(value);
+    };
+
+    const onChangePronounce: InputTextProps["onChange"] = (e) => {
+        const value = e.target.value;
+        setPronounce(value);
     };
 
     const onChangeEditor = (e: EditorTextChangeParams) => {
@@ -444,6 +464,24 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                         value={note}
                         onLoad={onLoadEditor}
                         onKeyDownCapture={onEditorKeyDown}
+                    />
+                </div>
+                <div className="field mb-4">
+                    <label className="block mb-2 font-semibold">Look Up</label>
+                    <InputText
+                        value={lookUp}
+                        onChange={onChangeLookUp}
+                        className="block w-full"
+                    />
+                </div>
+                <div className="field mb-4">
+                    <label className="block mb-2 font-semibold">
+                        Pronounce
+                    </label>
+                    <InputText
+                        value={pronounce}
+                        onChange={onChangePronounce}
+                        className="block w-full"
                     />
                 </div>
                 <div className="field mb-4">
