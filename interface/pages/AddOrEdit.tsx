@@ -289,6 +289,14 @@ export const AddOrEdit = (props: AddOrEditProps) => {
         setText(value);
     };
 
+    const onFocusEditor = () => {
+        $("#note-editor").addClass("has-focused-child");
+    };
+
+    const onBlurEditor = () => {
+        $("#note-editor").removeClass("has-focused-child");
+    };
+
     const onLoadEditor = () => {
         $(".p-editor-toolbar span").attr("tabindex", "-1");
     };
@@ -310,7 +318,7 @@ export const AddOrEdit = (props: AddOrEditProps) => {
 
     const onEditorKeyDown: KeyboardEventHandler<HTMLDivElement> = (e) => {
         if (e.code === "Tab") {
-            $("#video-url0").get(0)?.focus();
+            $("#lookup").get(0)?.focus();
             e.preventDefault();
         }
     };
@@ -464,6 +472,10 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                         value={note}
                         onLoad={onLoadEditor}
                         onKeyDownCapture={onEditorKeyDown}
+                        onFocus={onFocusEditor}
+                        onBlur={onBlurEditor}
+                        id="note-editor"
+                        className="rounded-md"
                     />
                 </div>
                 <div className="field mb-4">
@@ -472,6 +484,7 @@ export const AddOrEdit = (props: AddOrEditProps) => {
                         value={lookUp}
                         onChange={onChangeLookUp}
                         className="block w-full"
+                        id="lookup"
                     />
                 </div>
                 <div className="field mb-4">
